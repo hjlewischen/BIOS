@@ -40,7 +40,7 @@ class EFI_FIRMWARE_VOLUME_HEADER:
     
         
 # open bin
-with open("./.data/SY8140.rom", "rb") as f:
+with open(r'.\.data\0GTK.bin', 'rb') as f:
     byte = f.read()
 
 # find NVRAM FV
@@ -49,5 +49,6 @@ nvram = byte[NV_START:NV_END]
 # Valiate Signature
 fv = EFI_FIRMWARE_VOLUME_HEADER(nvram)
 assert fv.Signature.decode() == "_FVH"
+
 
 
