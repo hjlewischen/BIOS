@@ -4,6 +4,7 @@ import re
 
 def main(args):
     count = 0
+    outbuf = []
 
     with open(args.infile) as f:
         for line in f.readlines():
@@ -16,8 +17,7 @@ def main(args):
                 arlen  = int(m.group(2))
 
                 for p in range(artype * arlen):
-                    print (m.group(0))
-                    count+=1
+                    outbuf.append(m.group(0))
 
                 continue
 
@@ -25,10 +25,10 @@ def main(args):
             if (m):
                 artype = int(int(m.group(1)) / 8)
                 for p in range(artype):
-                    print ((m.group(0)))
-                    count+=1
+                    outbuf.append(m.group(0))
 
-        print ("Variables: %d (0x%X)" % (count, count))
+        print ('\n'.join(outbuf))
+        print ("Variables: %d (0x%X)" % (len(outbuf), len(outbuf)))
 
         
 
