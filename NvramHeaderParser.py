@@ -37,10 +37,10 @@ if __name__ == "__main__":
                     description='NVRAM Header Processor',
                     epilog='Lewis Chen (hjlewischen@gmail.com)')
 
-    parser.add_argument('infile', metavar='INPUT', type=str, nargs='*', default="DpsdSetup.Types",
+    parser.add_argument('infile', metavar='INPUT', type=str, nargs='*', default="./.data/DpsdSetup.Types",
                     help='NVRAM header file *,types')
 
-    parser.add_argument('outfile', metavar='OUTPUT', type=str, nargs='*', default="DpsdSetup.out",
+    parser.add_argument('outfile', metavar='OUTPUT', type=str, nargs='*', default="./.data/DpsdSetup.out",
                     help='NVRAM header file *,types')
 
     args = parser.parse_args()
