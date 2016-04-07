@@ -12,21 +12,30 @@ EFI_FVB_ATTRIBUTES_2 = UINT32
 EFI_FV_BLOCK_MAP_ENTRY = UINT32 * 2
 
 
-off = 0  # offset
+class Offset(int):
+    def __init__(cls, initValue=0):
+        return int.__new__(cls, initValue)
+        self.begin = initValue
 
-def off2(width):
-    global off
+    def off2(self, width):
+        self.offset = self.offset + width
+        return self.offset
 
-    off = off + width
-    return off
 
+def littlePrint(byte):
+    return int.from_bytes(byte, byteorder='little')
+
+class EFI_FFS_FILE_HEADER:
+    def __init__(self, bn):
+        global off
+        off = 0 #offset
+    
 
 ## PiFirmwareVolume.h
 class EFI_FIRMWARE_VOLUME_HEADER:
     def __init__(self, bn):
-        global off
-        off = 0  # offset
-        self.ZeroVector = bn[ off: off2( len(UINT8) * 16)]
+        o = Offset(0)
+        self.ZeroVector = bn[o: o2( len(UINT8) * 16)]
         self.FileSystemGuid = bn[ off : off2(len(EFI_GUID))]
         self.FvLength = bn[ off : off2(len(UINT64))]
         self.Signature = bn[ off : off2(len(UINT32))]
@@ -34,8 +43,9 @@ class EFI_FIRMWARE_VOLUME_HEADER:
         self.HeaderLength = bn[ off : off2(len(UINT16))]
         self.Checksum = bn[ off : off2(len(UINT16))]
         self.ExtHeaderOffset = bn[ off : off2(len(UINT16))]
-        self.Reserved = bn[ off : off2( len(UINT8) * 1)]
-        self.Reversion = bn[ off : off2( len(EFI_FV_BLOCK_MAP_ENTRY) * 1)]
+        self.Reserved = bn[ off : off2(len(UINT8) * 1)]
+        self.Reversion = bn[ off : off2(len(UINT8))]
+        self.BlockMap = bn[ off : off2(len(EFI_FV_BLOCK_MAP_ENTRY) * 1)]
         self._length = off
     
         
