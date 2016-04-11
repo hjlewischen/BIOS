@@ -12,14 +12,13 @@ EFI_FVB_ATTRIBUTES_2 = UINT32
 EFI_FV_BLOCK_MAP_ENTRY = UINT32 * 2
 
 
-class Offset(int):
-    def __init__(cls, initValue=0):
-        return int.__new__(cls, initValue)
-        self.begin = initValue
+class Offset():
+    def __init__(self, initVal=0):
+        self.start = initVal
 
-    def off2(self, width):
-        self.offset = self.offset + width
-        return self.offset
+    def end(self, width):
+        self.start += width
+        return self.start 
 
 
 def littlePrint(byte):
@@ -35,18 +34,19 @@ class EFI_FFS_FILE_HEADER:
 class EFI_FIRMWARE_VOLUME_HEADER:
     def __init__(self, bn):
         o = Offset(0)
-        self.ZeroVector = bn[o: o2( len(UINT8) * 16)]
-        self.FileSystemGuid = bn[ off : off2(len(EFI_GUID))]
-        self.FvLength = bn[ off : off2(len(UINT64))]
-        self.Signature = bn[ off : off2(len(UINT32))]
-        self.Attributes = bn[ off : off2(len(EFI_FVB_ATTRIBUTES_2))]
-        self.HeaderLength = bn[ off : off2(len(UINT16))]
-        self.Checksum = bn[ off : off2(len(UINT16))]
-        self.ExtHeaderOffset = bn[ off : off2(len(UINT16))]
-        self.Reserved = bn[ off : off2(len(UINT8) * 1)]
-        self.Reversion = bn[ off : off2(len(UINT8))]
-        self.BlockMap = bn[ off : off2(len(EFI_FV_BLOCK_MAP_ENTRY) * 1)]
-        self._length = off
+        self.ZeroVector = bn[o.start : o.end( len(UINT8) * 16)]
+        self.FileSystemGuid = bn[o.start : o.end(len(EFI_GUID))]
+        self.FvLength = bn[o.start : o.end(len(UINT64))]
+        self.Signature = bn[o.start : o.end(len(UINT32))]
+        self.Attributes = bn[o.start: o.end(len(EFI_FVB_ATTRIBUTES_2))]
+        self.HeaderLength = bn[o.start : o.end(len(UINT16))]
+        self.Checksum = bn[o.start : o.end(len(UINT16))]
+        self.ExtHeaderOffset = bn[o.start : o.end(len(UINT16))]
+        self.Reserved = bn[o.start : o.end(len(UINT8) * 1)]
+        self.Reversion = bn[o.start : o.end(len(UINT8))]
+        self.BlockMap = bn[o.start : o.end(len(EFI_FV_BLOCK_MAP_ENTRY) * 1)]
+        self.body = bn[o.start:]
+        self._length = o.start
     
         
 # open bin
