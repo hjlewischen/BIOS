@@ -124,32 +124,6 @@ class NVAR:
         self.HeaderSize = o.start
         self.body = bn[o.start:]
 
-def SortHeader(filename):
-    count = 0
-    outbuf = []
-
-    with open(filename) as f:
-        for line in f.readlines():
-            if "SETUP_DATA" in line:    # end of structure
-                break
-
-            m = re.match('\s*UINT(\d+)\s.*\[\s*(\d+)\s*\];', line)    #extract array variables
-            if (m):
-                artype = int(int(m.group(1)) / 8)
-                arlen  = int(m.group(2))
-
-                for p in range(artype * arlen):
-                    outbuf.append(m.group(0))
-
-                continue
-
-            m = re.match('\s*UINT(\d+)\s.*;', line)   # extract variables
-            if (m):
-                artype = int(int(m.group(1)) / 8)
-                for p in range(artype):
-                    outbuf.append(m.group(0))
-    return outbuf
-
 
 def ExtractFv(name, nvram):
     # Valiate Signature
@@ -170,26 +144,34 @@ def ExtractFv(name, nvram):
 
     return fv
 
-
-def dumpNVAR(name, nvram, offset):
-    # Valiate Signature
-    nv_test = NVAR(nvram[offset:offset+10])
-    assert nv_test.Signature.decode() == "NVAR"
-
-    # Get Nvram size
-    nv_size = struct.unpack("<h", nv_test.size)[0]
-
-    # output 
-    nv_out = nvram[offset : offset + nv_size]
-
-    # store binary 
+def SaveBin(name, buf):
     with open(r'./build/'+name, 'wb') as f:
-        f.write(nv_out)
+        f.write(buf)
         print("%s... created" % name)
 
-    return NVAR(nv_out)
+
+def NvarParse(name, bn, start_o):
+    # Valiate Signature
+    nv_tmp = NVAR( bn[start_o : start_o+10] )
+    try:
+        sig = nv_tmp.Signature.decode() 
+    except UnicodeDecodeError:
+        print ("\nERROR: NVAR not found")
+        exit()
+
+    assert sig == "NVAR", "NVAR not found"
+
+
+    # Get Nvram size
+    nv_size = struct.unpack("<h", nv_tmp.size)[0]
+    nv_buf = bn[start_o : start_o + nv_size]
+
+    SaveBin(name, nv_buf)
+
+    return NVAR(nv_buf)
+
         
-def SortHeader(filename):
+def GetReference(filename):
     count = 0
     outbuf = []
 
@@ -216,12 +198,12 @@ def SortHeader(filename):
 
     # remove left space
     return [e.lstrip() for e in outbuf]
-
-
     
-def main(args):
 
+def main(args):
     logging.basicConfig(level=logging.DEBUG if args.verbose==True else logging.INFO)
+
+    setup_a = str_to_hex(args.sd)
 
     # open bin
     with open(args.infile, 'rb') as f:
@@ -233,15 +215,21 @@ def main(args):
 
     print ("NVRAM: 0x%x" % NV2_START)
     fv = ExtractFv("NVRAM2.bin", byte[NV2_START:NV2_END])
-    ipdb.set_trace()
+    
+    # TODO: search NVARs
 
-    setup = dumpNVAR("Setup.bin", byte, str_to_hex(args.sd))
+    # Extract desired NVAR
+    var = NvarParse("Setup.bin", byte, setup_a)
 
-    hf = SortHeader(args.tp)
-    assert len(setup.body)== len(hf), "Setup size is not match"
+    ref = GetReference(args.tp)
+    assert len(var.body)== len(ref), "Setup variable size is not match"
 
+    if args.addrinfo:
+        # Add address info
+        ref = ["0x%X %s" % (setup_a + var.HeaderSize + i, ref[i]) for i in range(len(ref)) ]
 
-    sd_value = list(zip(hf, setup.body))
+    # compile Variable and Refernece result
+    sd_value = list(zip(ref, var.body))
 
     outfile = args.infile.rsplit('/')[-1]
     with open(outfile+".nvarmp", "w") as f:
@@ -257,11 +245,14 @@ if __name__ == "__main__":
     parser.add_argument('infile', default='./.data/0GTK.bin',
                    help='BIOS file name')
 
-    parser.add_argument('--tp', default='./.data/DpsdSetup42.Types',
-                   help='types definitions')
+    parser.add_argument('--tp', default='./.data/DpsdSetup28.Types',
+                   help='Reference file (*.types)')
 
     parser.add_argument('--sd', default='0x23B34C', 
                     help='Setup NVAR address (Hex)')
+
+    parser.add_argument('-i', '--addrinfo', action="store_true", 
+                    help='Print address')
 
     parser.add_argument('-v', '--verbose', action="store_true", 
                     help='Verbose message')
